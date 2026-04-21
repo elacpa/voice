@@ -1,1235 +1,829 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Facing It — Voice Builder</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Facing It — Voice Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --stone-deepest: #08080a;
-    --stone-deep: #0f0f12;
-    --stone: #17171b;
-    --stone-light: #1f1f24;
-    --stone-edge: #2a2a30;
-    --etched: #e8e3d8;
-    --etched-dim: #a7a196;
-    --etched-faint: #6b665d;
-    --gilt: #b49668;
-    --gilt-soft: #8a7450;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body {
-    min-height: 100vh;
-    background: var(--stone-deepest);
-    color: var(--etched);
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 18px;
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
-
-  body {
-    background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(180, 150, 104, 0.04) 0%, transparent 50%),
-      radial-gradient(ellipse 100% 80% at 50% 100%, rgba(20, 20, 25, 1) 0%, var(--stone-deepest) 70%),
-      var(--stone-deepest);
-    position: relative;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    pointer-events: none;
-    z-index: 1;
-    mix-blend-mode: overlay;
-    opacity: 0.8;
-  }
-
-  #app {
-    position: relative;
-    z-index: 2;
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 64px 32px 96px;
-    min-height: 100vh;
-  }
-
-  .masthead {
-    text-align: center;
-    margin-bottom: 56px;
-    padding-bottom: 32px;
-    border-bottom: 1px solid var(--stone-edge);
-  }
-
-  .masthead .eyebrow {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    color: var(--gilt);
-    margin-bottom: 10px;
-  }
-
-  .masthead h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 400;
-    font-size: clamp(42px, 6vw, 64px);
-    font-style: italic;
-    line-height: 1;
-    color: var(--etched);
-    text-shadow: 0 1px 0 rgba(0,0,0,0.8), 0 -1px 0 rgba(255,255,255,0.04);
-  }
-
-  .masthead .credit {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    color: var(--etched-faint);
-    margin-top: 8px;
-    letter-spacing: 0.08em;
-  }
-
-  .screen {
-    display: none;
-    animation: fadeUp 0.6s ease-out;
-  }
-
-  .screen.active { display: block; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .progress {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 40px;
-  }
-
-  .progress-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--stone-edge);
-    transition: all 0.4s ease;
-  }
-
-  .progress-dot.done { background: var(--gilt-soft); }
-  .progress-dot.active {
-    background: var(--gilt);
-    width: 24px;
-    border-radius: 3px;
-  }
-
-  .screen-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 400;
-    font-size: 40px;
-    line-height: 1.1;
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
-  }
-
-  .screen-subtitle {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 20px;
-    color: var(--gilt);
-    margin-bottom: 20px;
-  }
-
-  .screen-desc {
-    color: var(--etched-dim);
-    margin-bottom: 36px;
-    font-size: 17px;
-    max-width: 580px;
-  }
-
-  .choice-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 8px;
-  }
-
-  .choice-card {
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 32px 28px;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
-    color: var(--etched);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .choice-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(180,150,104,0.06) 0%, transparent 40%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .choice-card:hover {
-    border-color: var(--gilt-soft);
-    transform: translateY(-2px);
-  }
-
-  .choice-card:hover::before { opacity: 1; }
-
-  .choice-label {
-    display: block;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 30px;
-    font-style: italic;
-    margin-bottom: 12px;
-    color: var(--etched);
-    position: relative;
-  }
-
-  .choice-desc {
-    color: var(--etched-dim);
-    font-size: 16px;
-    line-height: 1.55;
-    position: relative;
-  }
-
-  .options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .option {
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 18px 22px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 17px;
-    color: var(--etched);
-    text-align: left;
-    transition: all 0.25s ease;
-    line-height: 1.5;
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-  }
-
-  .option::before {
-    content: "";
-    flex-shrink: 0;
-    width: 10px;
-    height: 10px;
-    border: 1px solid var(--etched-faint);
-    border-radius: 50%;
-    margin-top: 8px;
-    transition: all 0.25s ease;
-  }
-
-  .option:hover {
-    border-color: var(--gilt-soft);
-    background: var(--stone-light);
-  }
-
-  .option.selected {
-    border-color: var(--gilt);
-    background: linear-gradient(to right, rgba(180,150,104,0.08), rgba(180,150,104,0.02));
-  }
-
-  .option.selected::before {
-    background: var(--gilt);
-    border-color: var(--gilt);
-    box-shadow: 0 0 0 3px rgba(180,150,104,0.15);
-  }
-
-  .custom-wrap { margin-top: 14px; }
-
-  .custom-input {
-    width: 100%;
-    background: var(--stone-deep);
-    border: 1px dashed var(--stone-edge);
-    padding: 16px 22px;
-    color: var(--etched);
-    font-family: inherit;
-    font-size: 17px;
-    resize: vertical;
-    min-height: 60px;
-    line-height: 1.5;
-    transition: all 0.25s ease;
-  }
-
-  .custom-input:focus {
-    outline: none;
-    border-color: var(--gilt);
-    border-style: solid;
-    background: var(--stone);
-  }
-
-  .custom-input::placeholder {
-    color: var(--etched-faint);
-    font-style: italic;
-  }
-
-  .nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 40px;
-    padding-top: 24px;
-    border-top: 1px solid var(--stone-edge);
-  }
-
-  .btn {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 17px;
-    letter-spacing: 0.08em;
-    padding: 12px 28px;
-    background: transparent;
-    border: 1px solid var(--stone-edge);
-    color: var(--etched-dim);
-    cursor: pointer;
-    transition: all 0.25s ease;
-    text-transform: uppercase;
-  }
-
-  .btn:hover:not(:disabled) {
-    color: var(--etched);
-    border-color: var(--etched-faint);
-  }
-
-  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .btn-primary {
-    background: var(--gilt);
-    color: var(--stone-deepest);
-    border-color: var(--gilt);
-    font-weight: 500;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #c9aa78;
-    border-color: #c9aa78;
-  }
-
-  .btn-primary:disabled {
-    background: var(--stone-edge);
-    border-color: var(--stone-edge);
-    color: var(--etched-faint);
-  }
-
-  .write-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .voice-rules {
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 24px;
-  }
-
-  .voice-rules h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    color: var(--gilt);
-    margin-bottom: 16px;
-    font-weight: 500;
-  }
-
-  .voice-rules .speaker-tag {
-    font-style: italic;
-    color: var(--etched-dim);
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--stone-edge);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-  }
-
-  .voice-rules ol {
-    list-style: none;
-    counter-reset: rule;
-  }
-
-  .voice-rules li {
-    counter-increment: rule;
-    padding: 10px 0;
-    padding-left: 32px;
-    position: relative;
-    font-size: 16px;
-    line-height: 1.5;
-    color: var(--etched);
-    border-bottom: 1px dotted var(--stone-edge);
-  }
-
-  .voice-rules li:last-child { border-bottom: none; }
-
-  .voice-rules li::before {
-    content: counter(rule);
-    position: absolute;
-    left: 0;
-    top: 10px;
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    color: var(--gilt);
-    font-size: 18px;
-  }
-
-  .voice-rules .rule-label {
-    display: block;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--etched-faint);
-    margin-bottom: 3px;
-  }
-
-  .field-label {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    color: var(--gilt);
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  .title-input {
-    width: 100%;
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 18px 22px;
-    color: var(--etched);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-style: italic;
-    transition: all 0.25s ease;
-  }
-
-  .title-input:focus { outline: none; border-color: var(--gilt); }
-  .title-input::placeholder { color: var(--etched-faint); }
-
-  .poem-input {
-    width: 100%;
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 22px;
-    color: var(--etched);
-    font-family: 'EB Garamond', serif;
-    font-size: 19px;
-    line-height: 1.7;
-    resize: vertical;
-    min-height: 180px;
-    transition: all 0.25s ease;
-  }
-
-  .poem-input:focus { outline: none; border-color: var(--gilt); }
-
-  .line-counter {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    color: var(--etched-faint);
-    font-style: italic;
-    text-align: right;
-    margin-top: 6px;
-  }
-
-  .line-counter.valid { color: var(--gilt); }
-  .line-counter.invalid { color: #a76b5e; }
-
-  .poem-preview {
-    background: var(--stone-deep);
-    border-left: 2px solid var(--gilt);
-    padding: 24px 28px;
-    margin-bottom: 28px;
-    font-family: 'EB Garamond', serif;
-    font-size: 18px;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    color: var(--etched);
-  }
-
-  .monument-wrap {
-    position: relative;
-    padding: 24px;
-  }
-
-  .crop-corner {
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    border-color: var(--gilt);
-    pointer-events: none;
-  }
-
-  .crop-corner.tl { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; }
-  .crop-corner.tr { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; }
-  .crop-corner.bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; }
-  .crop-corner.br { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; }
-
-  .monument {
-    background: linear-gradient(180deg, #1a1a1e 0%, #0f0f12 100%);
-    border: 1px solid var(--stone-edge);
-    padding: 48px 40px;
-    position: relative;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.03),
-      0 20px 60px rgba(0,0,0,0.5);
-  }
-
-  .monument::before {
-    content: "";
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    right: 14px;
-    bottom: 14px;
-    border: 1px solid rgba(180,150,104,0.15);
-    pointer-events: none;
-  }
-
-  .monument-mark {
-    text-align: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 11px;
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
-    color: var(--gilt);
-    margin-bottom: 28px;
-  }
-
-  .monument-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 400;
-    font-style: italic;
-    font-size: 38px;
-    text-align: center;
-    line-height: 1.1;
-    color: var(--etched);
-    margin-bottom: 10px;
-    word-break: break-word;
-  }
-
-  .monument-speaker {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 15px;
-    text-align: center;
-    color: var(--etched-dim);
-    letter-spacing: 0.1em;
-    margin-bottom: 32px;
-    font-style: italic;
-  }
-
-  .monument-poem {
-    font-family: 'EB Garamond', serif;
-    font-size: 19px;
-    line-height: 1.75;
-    color: var(--etched);
-    text-align: center;
-    white-space: pre-wrap;
-    padding: 24px 0;
-    margin-bottom: 28px;
-    border-top: 1px solid var(--stone-edge);
-    border-bottom: 1px solid var(--stone-edge);
-  }
-
-  .monument-rules-header {
-    text-align: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 11px;
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
-    color: var(--gilt);
-    margin-bottom: 18px;
-  }
-
-  .monument-rule {
-    display: flex;
-    gap: 14px;
-    padding: 9px 0;
-    font-size: 15px;
-    line-height: 1.5;
-    border-bottom: 1px dotted var(--stone-edge);
-  }
-
-  .monument-rule:last-child { border-bottom: none; }
-
-  .monument-rule-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    color: var(--gilt);
-    font-size: 18px;
-    flex-shrink: 0;
-    width: 20px;
-  }
-
-  .monument-rule-body { flex: 1; }
-
-  .monument-rule-cat {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--etched-faint);
-    display: block;
-    margin-bottom: 2px;
-  }
-
-  .monument-rule-text { color: var(--etched); }
-
-  .monument-footer {
-    text-align: center;
-    margin-top: 28px;
-    padding-top: 22px;
-    border-top: 1px solid var(--stone-edge);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 12px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--etched-faint);
-  }
-
-  .save-options {
-    margin-top: 32px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-  }
-
-  .save-card.primary {
-    border-color: var(--gilt-soft);
-    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
-  }
-
-  .save-card.primary h4 { color: var(--gilt); }
-
-  .save-card {
-    background: var(--stone);
-    border: 1px solid var(--stone-edge);
-    padding: 24px;
-  }
-
-  .save-card h4 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    color: var(--gilt);
-    margin-bottom: 12px;
-    font-weight: 500;
-  }
-
-  .save-card p {
-    color: var(--etched-dim);
-    font-size: 15px;
-    margin-bottom: 16px;
-    line-height: 1.5;
-  }
-
-  .save-card .shortcut {
-    font-family: 'Cormorant Garamond', serif;
-    color: var(--etched);
-    background: var(--stone-deep);
-    padding: 4px 10px;
-    border: 1px solid var(--stone-edge);
-    font-size: 14px;
-    font-style: italic;
-    display: inline-block;
-    margin: 2px 4px 2px 0;
-  }
-
-  .download-btn {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    letter-spacing: 0.15em;
-    padding: 14px 20px;
-    background: var(--gilt);
-    color: var(--stone-deepest);
-    border: none;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    text-transform: uppercase;
-    font-weight: 500;
-    width: 100%;
-  }
-
-  .download-btn:hover { background: #c9aa78; }
-
-  .save-intro {
-    text-align: center;
-    color: var(--etched-faint);
-    font-size: 14px;
-    font-style: italic;
-    margin-top: 0;
-    margin-bottom: 16px;
-  }
-
-  .restart-btn {
-    background: transparent;
-    border: 1px solid var(--stone-edge);
-    color: var(--etched-dim);
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    letter-spacing: 0.15em;
-    padding: 12px 20px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.25s ease;
-    margin-top: 24px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .restart-btn:hover {
-    color: var(--etched);
-    border-color: var(--etched-faint);
-  }
-
-  @media (max-width: 600px) {
-    #app { padding: 40px 20px 64px; }
-    .choice-grid { grid-template-columns: 1fr; }
-    .screen-title { font-size: 32px; }
-    .monument { padding: 32px 20px; }
-    .monument-wrap { padding: 18px; }
-    .monument-title { font-size: 28px; }
-    .monument-poem { font-size: 17px; }
-    .save-options { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 760px) and (min-width: 601px) {
-    .save-options { grid-template-columns: 1fr; }
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d0a05;
+  --bg2:       #161009;
+  --gold:      #d4a94e;
+  --gold-dim:  #7a6028;
+  --gold-glow: rgba(212,169,78,0.13);
+  --text:      #ede3cc;
+  --text-mid:  #c4b48a;
+  --text-dim:  #8a7a58;
+  --border:    rgba(212,169,78,0.22);
+  --elem-color: #d4a94e;
+  --elem-glow:  rgba(212,169,78,0.12);
+  font-size: 18px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; overflow-x: hidden; line-height: 1.65;
+}
+
+.screen { display: none; position: relative; z-index: 1; min-height: 100vh; padding: 28px 20px 100px; }
+.screen.active { display: block; }
+.center-wrap { max-width: 640px; margin: 0 auto; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeUp 0.4s ease both; }
+
+/* BACK */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); padding: 7px 14px; border-radius: 4px;
+  font-family: 'Libre Baskerville', serif; font-size: 0.78rem;
+  cursor: pointer; margin-bottom: 22px; transition: all 0.15s;
+}
+.back-btn:hover { border-color: var(--elem-color); color: var(--text-mid); }
+
+/* DOTS */
+.dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 26px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.25s; }
+.dot.done { background: var(--elem-color); }
+.dot.active { background: var(--elem-color); transform: scale(1.45); box-shadow: 0 0 8px var(--elem-color); }
+
+.deco-rule {
+  display: flex; align-items: center; gap: 14px;
+  margin: 22px 0; color: var(--gold-dim); font-size: 0.75rem;
+}
+.deco-rule::before, .deco-rule::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+}
+
+/* ── INTRO ── */
+.intro-hero { text-align: center; padding: 36px 0 28px; }
+.feather-big { font-size: 3rem; display: block; margin-bottom: 18px; }
+.intro-eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 10px; }
+.intro-title { font-family: 'Playfair Display', serif; font-size: clamp(1.9rem, 5vw, 2.8rem); color: var(--text); line-height: 1.1; margin-bottom: 6px; font-weight: 700; }
+.intro-author { font-size: 1rem; color: var(--text-mid); margin-bottom: 4px; }
+.intro-tagline { font-size: 0.82rem; color: var(--gold); letter-spacing: 0.06em; }
+
+.field-group { margin-bottom: 24px; }
+.field-label { display: block; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; font-weight: 700; }
+.field-input {
+  width: 100%; background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); padding: 12px 16px;
+  font-family: 'Libre Baskerville', serif; font-size: 1rem;
+  outline: none; transition: border-color 0.2s;
+}
+.field-input:focus { border-color: var(--gold); }
+.field-input::placeholder { color: var(--text-dim); }
+
+.names-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.name-row { display: flex; gap: 8px; align-items: center; }
+.name-row .field-input { flex: 1; }
+.remove-name-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-dim); width: 36px; height: 44px; border-radius: 4px;
+  cursor: pointer; font-size: 1rem; flex-shrink: 0;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+}
+.remove-name-btn:hover { border-color: #c06040; color: #c06040; }
+
+.add-member-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: transparent; border: 1px dashed var(--border);
+  color: var(--text-mid); padding: 9px 16px; border-radius: 4px;
+  font-family: 'Libre Baskerville', serif; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.15s; width: 100%;
+}
+.add-member-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+.elem-pick-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; font-weight: 700; }
+.elem-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+@media (max-width: 500px) { .elem-cards { grid-template-columns: 1fr; } }
+
+.elem-card {
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  padding: 20px 14px; cursor: pointer; text-align: center;
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.elem-card:hover { transform: translateY(-3px); border-color: var(--c, var(--gold)); }
+.elem-card.selected { border-color: var(--c, var(--gold)); background: var(--cg, rgba(212,169,78,0.07)); box-shadow: 0 0 18px var(--cs, rgba(212,169,78,0.1)); }
+.ec-icon { font-size: 1.7rem; margin-bottom: 10px; }
+.ec-name { font-family: 'Playfair Display', serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c, var(--gold)); margin-bottom: 5px; }
+.ec-sub { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; }
+
+.start-btn {
+  width: 100%; padding: 15px; background: var(--gold); color: var(--bg);
+  border: none; border-radius: 4px; cursor: pointer;
+  font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
+  opacity: 0.3; pointer-events: none;
+}
+.start-btn.ready { opacity: 1; pointer-events: all; }
+.start-btn.ready:hover { background: #e8bd5a; transform: translateY(-1px); }
+
+/* ── POEM ── */
+.pscreen-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+}
+.pscreen-step { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; font-weight: 700; }
+.pscreen-title { font-family: 'Playfair Display', serif; font-size: 1.45rem; color: var(--text); font-weight: 700; }
+
+.elem-pill {
+  display: inline-flex; align-items: center; padding: 5px 14px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--elem-color); color: var(--elem-color); background: var(--elem-glow);
+}
+
+.poem-instruction {
+  background: rgba(255,255,255,0.04); border-left: 3px solid var(--elem-color);
+  padding: 13px 17px; margin-bottom: 18px;
+  font-size: 1rem; color: var(--text); line-height: 1.6; border-radius: 0 4px 4px 0;
+  font-weight: 700;
+}
+
+.poem-click-note { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
+
+.poem-body { margin-bottom: 150px; }
+
+.poem-line {
+  display: block; padding: 5px 10px; margin: 2px 0;
+  font-family: 'Libre Baskerville', serif; font-size: 1.05rem;
+  color: var(--text-mid); line-height: 1.75; cursor: pointer; border-radius: 3px;
+  border: 1px solid transparent;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  user-select: none;
+}
+.poem-line:hover:not(.used) { background: rgba(255,255,255,0.06); color: var(--text); }
+.poem-line.pending { background: var(--elem-glow); color: var(--text); border-color: rgba(212,169,78,0.35); font-weight: 700; }
+.poem-line.used { opacity: 0.22; cursor: not-allowed; text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.2); }
+
+.sel-tray {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: var(--bg2); border-top: 2px solid rgba(212,169,78,0.35);
+  padding: 15px 20px; transform: translateY(110%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+}
+.sel-tray.open { transform: translateY(0); }
+.sel-tray-inner { max-width: 640px; margin: 0 auto; }
+
+.sel-preview {
+  font-size: 1rem; color: var(--elem-color); font-weight: 700;
+  padding: 10px 14px; background: var(--elem-glow);
+  border-radius: 4px; margin-bottom: 10px; line-height: 1.6;
+}
+.sel-question { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px; }
+.sel-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.btn-add {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-mid); padding: 8px 16px; border-radius: 4px;
+  cursor: pointer; font-family: 'Libre Baskerville', serif; font-size: 0.88rem; transition: all 0.15s;
+}
+.btn-add:hover:not(:disabled) { border-color: var(--elem-color); color: var(--elem-color); }
+.btn-add:disabled { opacity: 0.22; cursor: not-allowed; }
+
+.btn-confirm {
+  background: var(--elem-color); color: var(--bg); border: none;
+  padding: 9px 22px; border-radius: 4px; cursor: pointer;
+  font-family: 'Playfair Display', serif; font-size: 0.9rem; font-weight: 700;
+  transition: filter 0.15s, transform 0.1s;
+}
+.btn-confirm:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-reset {
+  background: transparent; border: none; color: var(--text-dim);
+  cursor: pointer; font-family: 'Libre Baskerville', serif; font-size: 0.82rem;
+  text-decoration: underline; padding: 8px 4px;
+}
+.btn-reset:hover { color: var(--text-mid); }
+
+/* ── ANALYSIS ── */
+.analysis-quote {
+  font-size: 1.08rem; color: var(--elem-color); font-weight: 700;
+  padding: 15px 18px; border-left: 3px solid var(--elem-color);
+  background: var(--elem-glow); border-radius: 0 6px 6px 0;
+  margin-bottom: 28px; line-height: 1.65;
+}
+
+.q-block { margin-bottom: 24px; }
+.q-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.q-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--elem-color); color: var(--bg);
+  font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; margin-top: 3px;
+}
+.q-text { font-size: 1rem; color: var(--text); line-height: 1.55; flex: 1; font-weight: 700; }
+.hint-trigger {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: transparent; border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text-dim); font-size: 0.72rem; flex-shrink: 0;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; margin-top: 3px;
+}
+.hint-trigger:hover { border-color: var(--elem-color); color: var(--elem-color); }
+
+.a-textarea {
+  width: 100%; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+  padding: 12px 16px; color: var(--text);
+  font-family: 'Libre Baskerville', serif; font-size: 1rem;
+  line-height: 1.65; resize: vertical; min-height: 90px; outline: none;
+  transition: border-color 0.2s;
+}
+.a-textarea:focus { border-color: var(--elem-color); }
+.a-textarea::placeholder { color: var(--text-dim); font-size: 0.88rem; }
+
+.val-msg { color: #d07050; font-size: 0.85rem; margin-top: 8px; display: none; }
+.val-msg.show { display: block; }
+
+.continue-btn {
+  display: inline-block; background: var(--elem-color); color: var(--bg);
+  border: none; padding: 13px 36px; border-radius: 4px; cursor: pointer;
+  font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+  margin-top: 8px; transition: filter 0.15s, transform 0.1s;
+}
+.continue-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-bg.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: #201508; border: 1px solid rgba(212,169,78,0.3);
+  border-radius: 10px; padding: 26px; max-width: 400px; width: 90%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  transform: scale(0.94); transition: transform 0.2s;
+}
+.modal-bg.open .modal-box { transform: scale(1); }
+.modal-head { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.modal-icon { font-size: 1.2rem; }
+.modal-title { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1rem; font-weight: 700; }
+.modal-body { font-size: 0.95rem; color: var(--text-mid); line-height: 1.65; margin-bottom: 18px; }
+.modal-close {
+  background: var(--gold); color: var(--bg); border: none;
+  padding: 9px 24px; border-radius: 4px; cursor: pointer;
+  font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.9rem;
+}
+
+/* ── FINAL ── */
+.final-intro { text-align: center; margin-bottom: 24px; }
+.final-intro h2 { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--gold); margin-bottom: 6px; font-weight: 700; }
+.final-intro p { color: var(--text-mid); font-size: 0.92rem; }
+
+#the-card {
+  background: #f4edd8; color: #221508;
+  border-radius: 10px; padding: 34px 34px 26px;
+  box-shadow: 0 6px 40px rgba(0,0,0,0.55);
+  font-family: 'Libre Baskerville', Georgia, serif;
+}
+
+.card-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding-bottom: 16px; border-bottom: 2px solid var(--elem-color); margin-bottom: 20px;
+}
+.card-poem-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #221508; font-weight: 700; }
+.card-meta { font-size: 0.8rem; color: #7a6035; margin-top: 4px; font-weight: 700; }
+.card-elem-badge {
+  padding: 4px 13px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  border: 1px solid var(--elem-color); color: var(--elem-color);
+  white-space: nowrap; flex-shrink: 0; margin-left: 12px;
+}
+
+.card-ex { margin-bottom: 18px; }
+.card-ex-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--elem-color); margin-bottom: 8px; }
+.card-ex-quote {
+  font-size: 0.95rem; color: #3a2808; font-weight: 700;
+  padding: 9px 14px; border-left: 3px solid var(--elem-color);
+  background: rgba(0,0,0,0.05); border-radius: 0 3px 3px 0;
+  margin-bottom: 10px; line-height: 1.55;
+}
+.card-qa { margin-bottom: 9px; }
+.card-q { font-size: 0.7rem; color: #9a7845; font-weight: 700; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.card-a { font-size: 0.88rem; color: #221508; line-height: 1.55; }
+.card-div { border: none; border-top: 1px solid #d8c8a0; margin: 14px 0; }
+.card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 12px; border-top: 1px solid #d8c8a0;
+  font-size: 0.7rem; color: #a08a60; font-weight: 700;
+}
+
+.final-btns { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.save-btn, .screenshot-btn {
+  flex: 1; min-width: 180px; padding: 14px 20px; border-radius: 4px;
+  cursor: pointer; font-family: 'Playfair Display', serif;
+  font-size: 0.95rem; font-weight: 700;
+  transition: filter 0.15s, transform 0.1s;
+}
+.save-btn { background: var(--gold); color: var(--bg); border: none; }
+.save-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.screenshot-btn { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
+.screenshot-btn:hover { background: var(--gold-glow); transform: translateY(-1px); }
+
+.padlet-tip { margin-top: 14px; text-align: center; font-size: 0.82rem; color: var(--text-dim); }
 </style>
 </head>
 <body>
-<div id="app">
 
-  <header class="masthead">
-    <p class="eyebrow">Voice Builder</p>
-    <h1>Facing It</h1>
-    <p class="credit">after the poem by Yusef Komunyakaa</p>
-  </header>
-
-  <div id="screens"></div>
-
-</div>
-
-<script>
-const CATEGORIES = [
-  {
-    id: 'diction',
-    name: 'Diction',
-    subtitle: 'Word choice',
-    description: "Voice lives first in the words a writer picks — plain or elevated, bodily or abstract, formal or colloquial.",
-    options: [
-      "Plain, everyday words rather than elevated or formal ones",
-      "Formal, elevated, or literary vocabulary",
-      "Words drawn from a specific field — medical, legal, religious, technical",
-      "Words tied to the body or physical sensation",
-      "A colloquial word or bit of slang that breaks the register",
-      "Emotionally loaded words with strong connotations"
-    ]
-  },
-  {
-    id: 'syntax',
-    name: 'Syntax',
-    subtitle: 'Sentence structure and rhythm',
-    description: "How sentences are shaped — their length, their breaks, their patterns — builds a voice before any single word does its work.",
-    options: [
-      "Short declarative sentences stacked for impact",
-      "Long, winding sentences that build through clauses",
-      "Fragments — incomplete sentences used deliberately",
-      "Parallel structures or repeated sentence patterns",
-      "Interruption — dashes, parentheses, self-correction",
-      "Dramatic variation between short and long sentences"
-    ]
-  },
-  {
-    id: 'tone',
-    name: 'Tone',
-    subtitle: "The speaker's attitude",
-    description: "Tone is the speaker's stance toward the subject — how they feel about it, how they want you to feel about it, and how much of that they are willing to show.",
-    options: [
-      "Detached and observational — emotion held back",
-      "Intimate and confessional — the speaker lets you in",
-      "Ironic or wry — says one thing, means another",
-      "Reverent or solemn — treats the subject with weight",
-      "Angry or defiant — pushing back against something",
-      "Longing or nostalgic — reaching toward what is gone"
-    ]
-  },
-  {
-    id: 'imagery',
-    name: 'Imagery & Detail',
-    subtitle: 'What the speaker notices',
-    description: "A writer's voice is in what they choose to see. The selection of detail — one thing rather than another — reveals the speaker as clearly as any statement.",
-    options: [
-      "Visual images — what is seen",
-      "Tactile detail — what is touched or physically felt",
-      "One small, specific detail that carries large meaning",
-      "A contrast between two images — light and dark, still and moving",
-      "A reflection, mirror, or doubled image",
-      "A sound — or a silence — that shapes the moment"
-    ]
-  },
-  {
-    id: 'persona',
-    name: 'Persona / Point of View',
-    subtitle: 'Who speaks, and how they position themselves',
-    description: "Voice is inseparable from the speaker — who they are, where they stand in relation to the subject, and how close they let the reader come.",
-    options: [
-      "First person, directly in the scene ('I' am here, now)",
-      "First person looking back, observing from distance or memory",
-      "Second person — speaking to 'you'",
-      "Third person, close inside one character's perspective",
-      "A speaker unlike the writer — a chosen voice or mask",
-      "A speaker who reveals themselves by what they notice, not what they say"
-    ]
-  }
-];
-
-const SPEAKERS = {
-  boy: {
-    label: "The Boy",
-    desc: "A child at the Memorial. His mother's hand moves through his hair. He watches the names, the people, the reflections moving across the wall.",
-    voicedAs: "In the voice of the boy"
-  },
-  woman: {
-    label: "The Woman",
-    desc: "A mother at the Memorial. She brushes her son's hair. The names in the granite catch her eye. She has come here for a reason.",
-    voicedAs: "In the voice of the woman"
-  }
-};
-
-const state = {
-  speaker: null,
-  choices: {},
-  title: "",
-  poem: "",
-  currentScreen: "speaker"
-};
-
-const screensEl = document.getElementById('screens');
-
-function render() {
-  screensEl.innerHTML = "";
-  if (state.currentScreen === "speaker") renderSpeaker();
-  else if (state.currentScreen.startsWith("cat-")) {
-    const idx = parseInt(state.currentScreen.slice(4));
-    renderCategory(idx);
-  }
-  else if (state.currentScreen === "write") renderWrite();
-  else if (state.currentScreen === "title") renderTitle();
-  else if (state.currentScreen === "summary") renderSummary();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function renderSpeaker() {
-  const el = document.createElement('section');
-  el.className = 'screen active';
-  el.innerHTML = `
-    <h2 class="screen-title">Who speaks?</h2>
-    <p class="screen-subtitle">Choose the voice you will inhabit.</p>
-    <p class="screen-desc">In Komunyakaa's final lines, a woman brushes a boy's hair at the Wall. You will rewrite a moment in the voice of one of them. A different speaker means a different voice — that's Persona at work.</p>
-    <div class="choice-grid">
-      ${Object.entries(SPEAKERS).map(([key, s]) => `
-        <button class="choice-card" data-speaker="${key}">
-          <span class="choice-label">${s.label}</span>
-          <p class="choice-desc">${s.desc}</p>
-        </button>
-      `).join('')}
+<!-- ═══════ INTRO ═══════ -->
+<div id="s-intro" class="screen active">
+  <div class="center-wrap fade-in">
+    <div class="intro-hero">
+      <span class="feather-big">🪶</span>
+      <p class="intro-eyebrow">English 12B — Voice Analysis</p>
+      <h1 class="intro-title">Facing It</h1>
+      <p class="intro-author">Yusef Komunyakaa</p>
+      <p class="intro-tagline">Your element. Your evidence. Your analysis.</p>
     </div>
-  `;
-  el.querySelectorAll('.choice-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.speaker = btn.dataset.speaker;
-      state.currentScreen = "cat-0";
-      render();
-    });
-  });
-  screensEl.appendChild(el);
-}
+    <div class="deco-rule">✦</div>
 
-function renderProgressDots(activeIdx) {
-  return `
-    <div class="progress">
-      ${CATEGORIES.map((_, i) => `
-        <div class="progress-dot ${i < activeIdx ? 'done' : ''} ${i === activeIdx ? 'active' : ''}"></div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function renderCategory(idx) {
-  const cat = CATEGORIES[idx];
-  const current = state.choices[cat.id] || "";
-  const presetMatch = cat.options.includes(current);
-  const customValue = !presetMatch && current ? current : "";
-
-  const el = document.createElement('section');
-  el.className = 'screen active';
-  el.innerHTML = `
-    ${renderProgressDots(idx)}
-    <h2 class="screen-title">${cat.name}</h2>
-    <p class="screen-subtitle">${cat.subtitle}</p>
-    <p class="screen-desc">${cat.description}</p>
-    <div class="options">
-      ${cat.options.map(opt => `
-        <button class="option ${current === opt ? 'selected' : ''}" data-opt="${encodeURIComponent(opt)}">${opt}</button>
-      `).join('')}
-    </div>
-    <div class="custom-wrap">
-      <textarea class="custom-input" placeholder="Or write your own — be specific, not vague. Name the craft move, not the feeling.">${customValue}</textarea>
-    </div>
-    <div class="nav">
-      <button class="btn" data-action="back">← Back</button>
-      <button class="btn btn-primary" data-action="next" ${current ? '' : 'disabled'}>
-        ${idx === CATEGORIES.length - 1 ? 'To the Writing →' : 'Next →'}
-      </button>
-    </div>
-  `;
-
-  const options = el.querySelectorAll('.option');
-  const customInput = el.querySelector('.custom-input');
-  const nextBtn = el.querySelector('[data-action="next"]');
-
-  function refreshNext() {
-    nextBtn.disabled = !state.choices[cat.id];
-  }
-
-  options.forEach(o => {
-    o.addEventListener('click', () => {
-      const val = decodeURIComponent(o.dataset.opt);
-      state.choices[cat.id] = val;
-      customInput.value = "";
-      options.forEach(x => x.classList.remove('selected'));
-      o.classList.add('selected');
-      refreshNext();
-    });
-  });
-
-  customInput.addEventListener('input', () => {
-    const val = customInput.value.trim();
-    if (val) {
-      state.choices[cat.id] = val;
-      options.forEach(x => x.classList.remove('selected'));
-    } else {
-      delete state.choices[cat.id];
-    }
-    refreshNext();
-  });
-
-  el.querySelector('[data-action="back"]').addEventListener('click', () => {
-    state.currentScreen = idx === 0 ? "speaker" : `cat-${idx - 1}`;
-    render();
-  });
-
-  el.querySelector('[data-action="next"]').addEventListener('click', () => {
-    if (!state.choices[cat.id]) return;
-    state.currentScreen = idx === CATEGORIES.length - 1 ? "write" : `cat-${idx + 1}`;
-    render();
-  });
-
-  screensEl.appendChild(el);
-}
-
-function countLines(text) {
-  if (!text.trim()) return 0;
-  return text.split('\n').filter(l => l.trim().length > 0).length;
-}
-
-function renderWrite() {
-  const speakerInfo = SPEAKERS[state.speaker];
-  const el = document.createElement('section');
-  el.className = 'screen active';
-  el.innerHTML = `
-    <h2 class="screen-title">Now write.</h2>
-    <p class="screen-subtitle">Four to six lines, in the voice you have just defined.</p>
-
-    <div class="write-layout">
-      <div class="voice-rules">
-        <h3>Your Voice, in Five Rules</h3>
-        <div class="speaker-tag">${speakerInfo.voicedAs}</div>
-        <ol>
-          ${CATEGORIES.map(cat => `
-            <li>
-              <span class="rule-label">${cat.name}</span>
-              ${state.choices[cat.id]}
-            </li>
-          `).join('')}
-        </ol>
-      </div>
-
-      <div>
-        <label class="field-label">Poem — 4 to 6 lines</label>
-        <textarea class="poem-input" placeholder="Write your poem here. Read it against your five rules — does each one show up?">${state.poem}</textarea>
-        <div class="line-counter">0 lines</div>
-      </div>
+    <div class="field-group">
+      <label class="field-label" for="room-in">Breakout Room</label>
+      <input type="text" id="room-in" class="field-input" placeholder="e.g. Room 3" autocomplete="off"/>
     </div>
 
-    <div class="nav">
-      <button class="btn" data-action="back">← Back</button>
-      <button class="btn btn-primary" data-action="next" disabled>Give It a Title →</button>
-    </div>
-  `;
-
-  const poemInput = el.querySelector('.poem-input');
-  const lineCounter = el.querySelector('.line-counter');
-  const nextBtn = el.querySelector('[data-action="next"]');
-
-  function refresh() {
-    state.poem = poemInput.value;
-    const lines = countLines(state.poem);
-    lineCounter.textContent = `${lines} line${lines === 1 ? '' : 's'}`;
-    lineCounter.classList.toggle('valid', lines >= 4 && lines <= 6);
-    lineCounter.classList.toggle('invalid', lines > 0 && (lines < 4 || lines > 6));
-    nextBtn.disabled = !(lines >= 4 && lines <= 6);
-  }
-
-  poemInput.addEventListener('input', refresh);
-  refresh();
-
-  el.querySelector('[data-action="back"]').addEventListener('click', () => {
-    state.currentScreen = `cat-${CATEGORIES.length - 1}`;
-    render();
-  });
-
-  el.querySelector('[data-action="next"]').addEventListener('click', () => {
-    if (nextBtn.disabled) return;
-    state.currentScreen = "title";
-    render();
-  });
-
-  screensEl.appendChild(el);
-}
-
-function renderTitle() {
-  const el = document.createElement('section');
-  el.className = 'screen active';
-  el.innerHTML = `
-    <h2 class="screen-title">Now name it.</h2>
-    <p class="screen-subtitle">A title that earns the poem beneath it.</p>
-    <p class="screen-desc">A title is not a label — it's the last line of the voice you just built. Read your poem below, then give it a title that sharpens, reframes, or quietly contradicts it.</p>
-
-    <div class="poem-preview">${escapeHtml(state.poem)}</div>
-
-    <label class="field-label">Title</label>
-    <input type="text" class="title-input" placeholder="A title…" value="${state.title.replace(/"/g, '&quot;')}" />
-
-    <div class="nav">
-      <button class="btn" data-action="back">← Back</button>
-      <button class="btn btn-primary" data-action="next" ${state.title ? '' : 'disabled'}>Compose the Monument →</button>
-    </div>
-  `;
-
-  const titleInput = el.querySelector('.title-input');
-  const nextBtn = el.querySelector('[data-action="next"]');
-
-  titleInput.addEventListener('input', () => {
-    state.title = titleInput.value.trim();
-    nextBtn.disabled = !state.title;
-  });
-
-  titleInput.focus();
-
-  el.querySelector('[data-action="back"]').addEventListener('click', () => {
-    state.currentScreen = "write";
-    render();
-  });
-
-  el.querySelector('[data-action="next"]').addEventListener('click', () => {
-    if (nextBtn.disabled) return;
-    state.currentScreen = "summary";
-    render();
-  });
-
-  screensEl.appendChild(el);
-}
-
-function renderSummary() {
-  const speakerInfo = SPEAKERS[state.speaker];
-  const el = document.createElement('section');
-  el.className = 'screen active';
-  el.innerHTML = `
-    <p class="save-intro">Your voice is built. Save it using either option below, then upload to our class Padlet.</p>
-
-    <div class="monument-wrap" id="monument-wrap">
-      <span class="crop-corner tl"></span>
-      <span class="crop-corner tr"></span>
-      <span class="crop-corner bl"></span>
-      <span class="crop-corner br"></span>
-
-      <div class="monument" id="monument-card">
-        <div class="monument-mark">◆ Facing It · Voice Builder ◆</div>
-        <h2 class="monument-title">${escapeHtml(state.title)}</h2>
-        <div class="monument-speaker">${speakerInfo.voicedAs}</div>
-        <div class="monument-poem">${escapeHtml(state.poem)}</div>
-
-        <div class="monument-rules-header">— The Voice, in Five Rules —</div>
-        ${CATEGORIES.map((cat, i) => `
-          <div class="monument-rule">
-            <div class="monument-rule-num">${i + 1}</div>
-            <div class="monument-rule-body">
-              <span class="monument-rule-cat">${cat.name}</span>
-              <span class="monument-rule-text">${escapeHtml(state.choices[cat.id])}</span>
-            </div>
-          </div>
-        `).join('')}
-
-        <div class="monument-footer">after Yusef Komunyakaa</div>
-      </div>
-    </div>
-
-    <div class="save-options">
-      <div class="save-card primary">
-        <h4>Option A · Copy</h4>
-        <p>Click once, then paste straight into Padlet.</p>
-        <button class="download-btn" id="copy-btn">⎘ Copy to Clipboard</button>
-      </div>
-      <div class="save-card">
-        <h4>Option B · Download</h4>
-        <p>Save a PNG to your device, then upload it to Padlet.</p>
-        <button class="download-btn" id="download-btn">↓ Download Image</button>
-      </div>
-      <div class="save-card">
-        <h4>Option C · Screenshot</h4>
-        <p>Capture the area inside the gold corner marks above.</p>
-        <div>
-          <span class="shortcut">Mac: ⌘ + Shift + 4</span>
-          <span class="shortcut">Windows: Win + Shift + S</span>
+    <div class="field-group">
+      <label class="field-label">Group Members</label>
+      <div class="names-list" id="names-list">
+        <div class="name-row">
+          <input type="text" class="field-input name-in" placeholder="Member 1 — First Last" autocomplete="off"/>
         </div>
       </div>
+      <button class="add-member-btn" onclick="addMember()">+ Add Group Member</button>
     </div>
 
-    <button class="restart-btn" id="restart-btn">Start Over</button>
-  `;
+    <p class="elem-pick-label">Choose Your Element</p>
+    <div class="elem-cards">
+      <div class="elem-card" data-e="syntax"  style="--c:#d4a94e;--cg:rgba(212,169,78,0.08);--cs:rgba(212,169,78,0.15)" onclick="pickElem('syntax',this)">
+        <div class="ec-icon">✒️</div>
+        <div class="ec-name">Syntax</div>
+        <div class="ec-sub">sentence structure and rhythm</div>
+      </div>
+      <div class="elem-card" data-e="imagery" style="--c:#6eb5a0;--cg:rgba(110,181,160,0.08);--cs:rgba(110,181,160,0.15)" onclick="pickElem('imagery',this)">
+        <div class="ec-icon">👁</div>
+        <div class="ec-name">Imagery</div>
+        <div class="ec-sub">what the speaker notices</div>
+      </div>
+      <div class="elem-card" data-e="pov"     style="--c:#9a78bf;--cg:rgba(154,120,191,0.08);--cs:rgba(154,120,191,0.15)" onclick="pickElem('pov',this)">
+        <div class="ec-icon">🔮</div>
+        <div class="ec-name">Persona / POV</div>
+        <div class="ec-sub">who speaks, and from where</div>
+      </div>
+    </div>
 
-  screensEl.appendChild(el);
+    <button class="start-btn" id="start-btn" onclick="goStart()">Begin Analysis →</button>
+  </div>
+</div>
 
-  el.querySelector('#copy-btn').addEventListener('click', async (event) => {
-    const btn = el.querySelector('#copy-btn');
-    const originalText = btn.textContent;
-    btn.textContent = "Capturing...";
-    btn.disabled = true;
+<!-- ═══════ POEM ═══════ -->
+<div id="s-poem" class="screen">
+  <div class="center-wrap fade-in">
+    <button class="back-btn" onclick="goBack('poem')">← Back</button>
+    <div class="dots" id="poem-dots"></div>
+    <div class="pscreen-header">
+      <div>
+        <div class="pscreen-step" id="poem-step">Example 1 of 2 — Select Your Lines</div>
+        <div class="pscreen-title">Find Your Evidence</div>
+      </div>
+      <div class="elem-pill" id="poem-pill">SYNTAX</div>
+    </div>
+    <div class="poem-instruction" id="poem-instr"></div>
+    <p class="poem-click-note">Click any line to select it. You can grab the next line too if you need it.</p>
+    <div class="poem-body" id="poem-body"></div>
+  </div>
 
-    try {
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
+  <div class="sel-tray" id="sel-tray">
+    <div class="sel-tray-inner">
+      <div class="sel-preview" id="sel-preview">—</div>
+      <p class="sel-question" id="sel-question">Just this line, or do you want the next one too?</p>
+      <div class="sel-actions">
+        <button class="btn-add" id="btn-add-next" onclick="addNext()">+ Add next line</button>
+        <button class="btn-confirm" onclick="confirmLines()">This is my example ✓</button>
+        <button class="btn-reset" onclick="resetSel()">Start over</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-      if (!navigator.clipboard || !window.ClipboardItem) {
-        throw new Error('Clipboard API not supported');
-      }
+<!-- ═══════ ANALYSIS ═══════ -->
+<div id="s-analysis" class="screen">
+  <div class="center-wrap fade-in">
+    <button class="back-btn" onclick="goBack('analysis')">← Edit My Line Selection</button>
+    <div class="dots" id="an-dots"></div>
+    <div class="pscreen-header">
+      <div>
+        <div class="pscreen-step" id="an-step">Analyze Example 1 of 2</div>
+        <div class="pscreen-title">Break It Down</div>
+      </div>
+      <div class="elem-pill" id="an-pill">SYNTAX</div>
+    </div>
+    <div class="analysis-quote" id="an-quote">—</div>
 
-      // Safari-safe pattern: pass a Promise to ClipboardItem so the
-      // clipboard.write() call stays synchronous with the user gesture.
-      const card = document.getElementById('monument-card');
-      const pngBlobPromise = (async () => {
-        const canvas = await html2canvas(card, {
-          backgroundColor: '#08080a',
-          scale: 2,
-          logging: false,
-          useCORS: true
-        });
-        return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      })();
+    <div class="q-block">
+      <div class="q-row">
+        <div class="q-num" id="q1-num">1</div>
+        <div class="q-text" id="q1-text">—</div>
+        <button class="hint-trigger" onclick="openHint(0)">?</button>
+      </div>
+      <textarea class="a-textarea" id="a1" rows="4" placeholder="Your answer here..."></textarea>
+    </div>
 
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': pngBlobPromise })
-      ]);
+    <div class="q-block">
+      <div class="q-row">
+        <div class="q-num" id="q2-num">2</div>
+        <div class="q-text" id="q2-text">—</div>
+        <button class="hint-trigger" onclick="openHint(1)">?</button>
+      </div>
+      <textarea class="a-textarea" id="a2" rows="4" placeholder="Your answer here..."></textarea>
+    </div>
 
-      btn.textContent = "✓ Copied — now paste in Padlet";
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }, 2500);
-    } catch (err) {
-      console.error(err);
-      btn.textContent = "Couldn't copy — try download";
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }, 2500);
-    }
+    <div class="val-msg" id="val-msg">Please answer both questions before continuing.</div>
+    <button class="continue-btn" id="an-continue" onclick="continueAnalysis()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════ FINAL ═══════ -->
+<div id="s-final" class="screen">
+  <div class="center-wrap fade-in">
+    <button class="back-btn" onclick="goBack('final')">← Edit My Analysis</button>
+
+    <div class="final-intro">
+      <h2>Your Analysis Card</h2>
+      <p>Save or screenshot it, then post to Padlet.</p>
+    </div>
+
+    <div id="the-card">
+      <div class="card-top">
+        <div>
+          <div class="card-poem-title">"Facing It" — Yusef Komunyakaa</div>
+          <div class="card-meta" id="card-meta">—</div>
+        </div>
+        <div class="card-elem-badge" id="card-badge">—</div>
+      </div>
+
+      <div class="card-ex">
+        <div class="card-ex-label">Example 1</div>
+        <div class="card-ex-quote" id="c-q1">—</div>
+        <div class="card-qa"><div class="card-q" id="c-ql1">—</div><div class="card-a" id="c-a1">—</div></div>
+        <div class="card-qa"><div class="card-q" id="c-ql2">—</div><div class="card-a" id="c-a2">—</div></div>
+      </div>
+
+      <hr class="card-div"/>
+
+      <div class="card-ex">
+        <div class="card-ex-label">Example 2</div>
+        <div class="card-ex-quote" id="c-q2">—</div>
+        <div class="card-qa"><div class="card-q" id="c-ql3">—</div><div class="card-a" id="c-a3">—</div></div>
+        <div class="card-qa"><div class="card-q" id="c-ql4">—</div><div class="card-a" id="c-a4">—</div></div>
+      </div>
+
+      <div class="card-footer">
+        <span>Choice Plus Academy · English 12B · Week 13</span>
+        <span id="card-date">—</span>
+      </div>
+    </div>
+
+    <div class="final-btns">
+      <button class="save-btn" onclick="saveCard()">💾 Download Image</button>
+    </div>
+    <p class="padlet-tip">Post your card to the class Padlet board when you are done. 🪶</p>
+  </div>
+</div>
+
+<!-- HINT MODAL -->
+<div class="modal-bg" id="modal-bg" onclick="closeHintOutside(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-icon">💡</span>
+      <span class="modal-title">Need a nudge?</span>
+    </div>
+    <p class="modal-body" id="modal-body">—</p>
+    <button class="modal-close" onclick="closeHint()">Got it</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const LINES = [
+  "My black face fades,",
+  "hiding inside the black granite.",
+  "I said I wouldn't",
+  "dammit: No tears.",
+  "I'm stone. I'm flesh.",
+  "My clouded reflection eyes me",
+  "like a bird of prey, the profile of night",
+  "slanted against morning. I turn",
+  "this way—the stone lets me go.",
+  "I turn that way—I'm inside",
+  "the Vietnam Veterans Memorial",
+  "again, depending on the light",
+  "to make a difference.",
+  "I go down the 58,022 names,",
+  "half-expecting to find",
+  "my own in letters like smoke.",
+  "I touch the name Andrew Johnson;",
+  "I see the booby trap's white flash.",
+  "Names shimmer on a woman's blouse",
+  "but when she walks away",
+  "the names stay on the wall.",
+  "Brushstrokes flash, a red bird's",
+  "wings cutting across my stare.",
+  "The sky. A plane in the sky.",
+  "A white vet's image floats",
+  "closer to me, then his pale eyes",
+  "look through mine. I'm a window.",
+  "He's lost his right arm",
+  "inside the stone. In the black mirror",
+  "a woman's trying to erase names:",
+  "No, she's brushing a boy's hair."
+];
+
+const ELEMS = {
+  syntax: {
+    label: 'SYNTAX', color: '#d4a94e', glow: 'rgba(212,169,78,0.13)',
+    instr: 'Find a moment where HOW the sentence is shaped carries the emotion. Look for fragments, sudden stops, rhythm changes, or lines that cut off mid-thought.',
+    qs: [
+      { q: 'How would you describe the shape of this line or fragment — is it short and punchy, long and winding, or does it cut off mid-thought?',
+        hint: 'Count the words. Notice where the line ends. Does it finish the thought, or does it break off? Short sentences can feel like a held breath. Long run-ons can feel like a mind that will not stop. What matches the speaker\'s emotional state here?',
+        ph: 'Start by counting the words. Is it 3 words or 13? Does the line feel finished, or does it cut off before the thought is done? Try: "This line is _______ because it _______ before _______."' },
+      { q: 'What does this sentence structure tell us about the speaker\'s state of mind or emotional state in that moment?',
+        hint: 'Would this hit differently as one long flowing sentence? The shape is a deliberate choice. A fragmented sentence can feel like a fragmented person. What is breaking in the speaker\'s mind that matches the break in the line?',
+        ph: 'Try filling in: "The [short / long / broken] sentence makes it feel like the speaker is _______. It would feel different as one long sentence because _______."' }
+    ]
+  },
+  imagery: {
+    label: 'IMAGERY & DETAIL', color: '#6eb5a0', glow: 'rgba(110,181,160,0.13)',
+    instr: 'Find a line where one specific, concrete detail carries all the emotional weight. The more specific, the more powerful. Look for an image that sticks.',
+    qs: [
+      { q: 'What EXACTLY does the speaker notice here? Name the specific thing — not just "he sees something at the wall."',
+        hint: 'What IS it? A name? A reflection? A color? A body part? A piece of clothing? A bird? Go granular. The more specific you are, the better your analysis. The detail matters — that is the whole point of imagery.',
+        ph: 'Name it first: "The speaker\'s eye lands on _______." Now get specific — what does it look like? What is it doing? Color, movement, size, location...' },
+      { q: 'Why does THIS detail matter? Out of everything at the Memorial, why did the speaker\'s eye land right here?',
+        hint: 'What you choose to notice says something about who you are. This speaker is a veteran and survivor standing at a wall of names of people who did not make it. Why THIS thing and not something else? What does the choice reveal about him?',
+        ph: 'Try: "This detail connects _______ and _______ in a way that shows _______. A stranger probably would not have noticed this because _______."' }
+    ]
+  },
+  pov: {
+    label: 'PERSONA / POV', color: '#9a78bf', glow: 'rgba(154,120,191,0.13)',
+    instr: 'Find a moment where the speaker\'s position — physical or emotional — shifts or surprises you. Look for places where he watches himself, loses himself, or blurs with the wall.',
+    qs: [
+      { q: 'Where is the speaker — physically and emotionally — in these lines? Is he inside the moment or watching himself from outside?',
+        hint: 'Look at the pronouns: I, my, me. Is he describing himself as if from the outside? Does he feel separate from his own body? Is he the observer or the thing being observed? Notice if the "I" changes its relationship to the wall.',
+        ph: 'Try: "Physically, the speaker is _______. Emotionally, he seems to be _______." Then ask: is he watching himself, or is he the one being watched?' },
+      { q: 'How does this specific point of view shape what WE feel as readers? Would it hit differently if someone else told this story?',
+        hint: 'He is not just any visitor — he is a Black veteran, a survivor, a combat journalist. What do we get because HE is the one speaking? What is different about hearing this from inside his perspective versus from an outside narrator?',
+        ph: 'Try: "If a stranger described this scene, we would feel _______. But because this speaker is _______, we feel _______ instead."' }
+    ]
+  }
+};
+
+const S = {
+  room:'', names:[], elem:null,
+  exNum:1, pending:[], used:[],
+  exs:[{lines:[],a1:'',a2:''},{lines:[],a1:'',a2:''}],
+  anNum:1
+};
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goBack(from) {
+  if (from==='poem') {
+    if (S.exNum===1) { show('intro'); }
+    else { setupAnalysis(1,true); show('analysis'); }
+  } else if (from==='analysis') {
+    const ei=S.anNum-1;
+    S.used=S.used.filter(i=>!S.exs[ei].lines.includes(i));
+    S.exs[ei].lines=[];
+    setupPoem(S.anNum); show('poem');
+  } else if (from==='final') {
+    setupAnalysis(2,true); show('analysis');
+  }
+}
+
+// ── INTRO ──
+function addMember() {
+  const list=document.getElementById('names-list');
+  if(list.querySelectorAll('.name-row').length>=6) return;
+  const n=list.querySelectorAll('.name-row').length+1;
+  const row=document.createElement('div'); row.className='name-row';
+  row.innerHTML=`<input type="text" class="field-input name-in" placeholder="Member ${n} — First Last" autocomplete="off"/><button class="remove-name-btn" onclick="removeMember(this)" title="Remove">✕</button>`;
+  list.appendChild(row);
+  row.querySelector('input').addEventListener('input',checkReady);
+  row.querySelector('input').focus();
+}
+function removeMember(btn) { btn.closest('.name-row').remove(); checkReady(); }
+
+document.getElementById('room-in').addEventListener('input',checkReady);
+document.querySelector('.name-in').addEventListener('input',checkReady);
+
+function pickElem(e,el) {
+  S.elem=e;
+  document.querySelectorAll('.elem-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); checkReady();
+}
+function checkReady() {
+  const room=document.getElementById('room-in').value.trim();
+  const anyName=[...document.querySelectorAll('.name-in')].some(i=>i.value.trim());
+  document.getElementById('start-btn').classList.toggle('ready',!!(room&&anyName&&S.elem));
+}
+function goStart() {
+  const room=document.getElementById('room-in').value.trim();
+  const names=[...document.querySelectorAll('.name-in')].map(i=>i.value.trim()).filter(Boolean);
+  if(!room||!names.length||!S.elem) return;
+  S.room=room; S.names=names;
+  const ec=ELEMS[S.elem];
+  document.documentElement.style.setProperty('--elem-color',ec.color);
+  document.documentElement.style.setProperty('--elem-glow',ec.glow);
+  setupPoem(1); show('poem');
+}
+
+// ── POEM ──
+function makeDots(id,total,done,active) {
+  const c=document.getElementById(id); c.innerHTML='';
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<done?' done':'')+(i===active?' active':'');
+    c.appendChild(d);
+  }
+}
+function setPill(id,ec) {
+  const el=document.getElementById(id);
+  el.textContent=ec.label; el.style.color=ec.color; el.style.borderColor=ec.color; el.style.background=ec.glow;
+}
+function setupPoem(exNum) {
+  S.exNum=exNum; S.pending=[];
+  const ec=ELEMS[S.elem]; const ai=exNum===1?0:2;
+  makeDots('poem-dots',4,ai,ai);
+  document.getElementById('poem-step').textContent=`Example ${exNum} of 2 — Select Your Lines`;
+  setPill('poem-pill',ec);
+  document.getElementById('poem-instr').textContent=ec.instr;
+  const body=document.getElementById('poem-body'); body.innerHTML='';
+  LINES.forEach((line,i)=>{
+    const el=document.createElement('span');
+    el.className='poem-line'; el.textContent=line; el.dataset.idx=i;
+    if(S.used.includes(i)){el.classList.add('used');}
+    else{el.addEventListener('click',()=>clickLine(i));}
+    body.appendChild(el); body.appendChild(document.createTextNode('\n'));
   });
+  closeTray();
+}
+function clickLine(idx) {
+  if(S.used.includes(idx)) return;
+  if(S.pending.length>0&&idx!==S.pending[S.pending.length-1]+1) resetSel();
+  if(S.pending.includes(idx)) return;
+  S.pending.push(idx); refreshPending(); openTray();
+}
+function refreshPending() {
+  document.querySelectorAll('.poem-line').forEach(el=>el.classList.remove('pending'));
+  S.pending.forEach(i=>{const el=document.querySelector(`.poem-line[data-idx="${i}"]`);if(el)el.classList.add('pending');});
+  document.getElementById('sel-preview').textContent='\u201c'+S.pending.map(i=>LINES[i]).join(' / ')+'\u201d';
+  const last=S.pending[S.pending.length-1];
+  document.getElementById('btn-add-next').disabled=last+1>=LINES.length||S.used.includes(last+1);
+  document.getElementById('sel-question').textContent=
+    S.pending.length===1?'Just this line, or do you want to grab the next one too?':`You have ${S.pending.length} lines — is this your example?`;
+}
+function openTray(){document.getElementById('sel-tray').classList.add('open');}
+function closeTray(){document.getElementById('sel-tray').classList.remove('open');}
+function addNext(){const n=S.pending[S.pending.length-1]+1;if(n<LINES.length&&!S.used.includes(n)){S.pending.push(n);refreshPending();}}
+function resetSel(){S.pending=[];document.querySelectorAll('.poem-line').forEach(el=>el.classList.remove('pending'));closeTray();}
+function confirmLines(){
+  if(!S.pending.length) return;
+  S.exs[S.exNum-1].lines=[...S.pending];
+  S.used.push(...S.pending); S.pending=[];
+  closeTray(); setupAnalysis(S.exNum,false); show('analysis');
+}
 
-  el.querySelector('#download-btn').addEventListener('click', async () => {
-    const btn = el.querySelector('#download-btn');
-    const originalText = btn.textContent;
-    btn.textContent = "Capturing...";
-    btn.disabled = true;
+// ── ANALYSIS ──
+function setupAnalysis(exNum,restore) {
+  S.anNum=exNum;
+  const ec=ELEMS[S.elem]; const ex=S.exs[exNum-1]; const ai=exNum===1?1:3;
+  makeDots('an-dots',4,ai,ai);
+  document.getElementById('an-step').textContent=`Analyze Example ${exNum} of 2`;
+  setPill('an-pill',ec);
+  const q=document.getElementById('an-quote');
+  q.textContent='\u201c'+ex.lines.map(i=>LINES[i]).join(' / ')+'\u201d';
+  q.style.color=ec.color; q.style.borderColor=ec.color; q.style.background=ec.glow;
+  document.getElementById('q1-text').textContent=ec.qs[0].q;
+  document.getElementById('q2-text').textContent=ec.qs[1].q;
+  document.getElementById('a1').placeholder=ec.qs[0].ph;
+  document.getElementById('a2').placeholder=ec.qs[1].ph;
+  document.getElementById('q1-num').style.background=ec.color;
+  document.getElementById('q2-num').style.background=ec.color;
+  document.getElementById('an-continue').style.background=ec.color;
+  document.getElementById('a1').value=restore?(ex.a1||''):'';
+  document.getElementById('a2').value=restore?(ex.a2||''):'';
+  document.getElementById('val-msg').classList.remove('show');
+}
+function openHint(qi){document.getElementById('modal-body').textContent=ELEMS[S.elem].qs[qi].hint;document.getElementById('modal-bg').classList.add('open');}
+function closeHint(){document.getElementById('modal-bg').classList.remove('open');}
+function closeHintOutside(e){if(e.target===document.getElementById('modal-bg'))closeHint();}
+function continueAnalysis(){
+  const a1=document.getElementById('a1').value.trim();
+  const a2=document.getElementById('a2').value.trim();
+  if(!a1||!a2){document.getElementById('val-msg').classList.add('show');return;}
+  S.exs[S.anNum-1].a1=a1; S.exs[S.anNum-1].a2=a2;
+  if(S.anNum===1){setupPoem(2);show('poem');}
+  else{buildCard();show('final');}
+}
 
-    try {
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
+// ── FINAL ──
+function buildCard(){
+  const ec=ELEMS[S.elem];
+  document.getElementById('the-card').style.setProperty('--elem-color',ec.color);
+  document.getElementById('card-meta').textContent=`${S.room} · ${S.names.join(', ')} · ${ec.label}`;
+  const badge=document.getElementById('card-badge');
+  badge.textContent=ec.label; badge.style.borderColor=ec.color; badge.style.color=ec.color;
+  const e1=S.exs[0],e2=S.exs[1];
+  document.getElementById('c-q1').textContent='\u201c'+e1.lines.map(i=>LINES[i]).join(' / ')+'\u201d';
+  document.getElementById('c-ql1').textContent=ec.qs[0].q; document.getElementById('c-a1').textContent=e1.a1;
+  document.getElementById('c-ql2').textContent=ec.qs[1].q; document.getElementById('c-a2').textContent=e1.a2;
+  document.getElementById('c-q2').textContent='\u201c'+e2.lines.map(i=>LINES[i]).join(' / ')+'\u201d';
+  document.getElementById('c-ql3').textContent=ec.qs[0].q; document.getElementById('c-a3').textContent=e2.a1;
+  document.getElementById('c-ql4').textContent=ec.qs[1].q; document.getElementById('c-a4').textContent=e2.a2;
+  document.getElementById('card-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+// Render card into an off-screen 16:9 frame so it fills the width properly
+function get169Canvas(){
+  const W = 1600, H = 900, PAD = 48;
 
-      const card = document.getElementById('monument-card');
-      const canvas = await html2canvas(card, {
-        backgroundColor: '#08080a',
-        scale: 2,
-        logging: false,
-        useCORS: true
-      });
+  // Build off-screen wrapper at exact 16:9 size
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = [
+    'position:fixed','top:-99999px','left:-99999px',
+    `width:${W}px`,`height:${H}px`,
+    'background:#f4edd8',
+    'display:flex','align-items:center','justify-content:center',
+    `padding:${PAD}px`,
+    'box-sizing:border-box','overflow:hidden'
+  ].join(';');
 
-      const link = document.createElement('a');
-      const safeTitle = (state.title || 'poem').replace(/[^a-z0-9]/gi, '-').toLowerCase();
-      link.download = `${safeTitle}-voice.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+  // Clone the rendered card and let it fill the wrapper width
+  const src = document.getElementById('the-card');
+  const clone = src.cloneNode(true);
+  // Copy the inline --elem-color variable set by buildCard()
+  clone.style.cssText = src.style.cssText;
+  clone.style.width = '100%';
+  clone.style.maxWidth = (W - PAD * 2) + 'px';
+  clone.style.boxShadow = '0 4px 24px rgba(0,0,0,0.18)';
+  clone.style.borderRadius = '10px';
+  clone.style.flexShrink = '0';
 
-      btn.textContent = "✓ Downloaded";
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      btn.textContent = "Error — try screenshot";
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }, 2500);
-    }
-  });
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
 
-  el.querySelector('#restart-btn').addEventListener('click', () => {
-    if (confirm("Start over? Your current work will be cleared.")) {
-      state.speaker = null;
-      state.choices = {};
-      state.title = "";
-      state.poem = "";
-      state.currentScreen = "speaker";
-      render();
-    }
+  return html2canvas(wrapper, {
+    backgroundColor: '#f4edd8',
+    scale: 2,
+    width: W, height: H,
+    windowWidth: W, windowHeight: H,
+    useCORS: true, logging: false
+  }).then(canvas => {
+    document.body.removeChild(wrapper);
+    return canvas;
+  }).catch(err => {
+    if(document.body.contains(wrapper)) document.body.removeChild(wrapper);
+    throw err;
   });
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function safeName(){
+  return (S.names[0]||'card').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
 }
 
-render();
+function saveCard(){
+  if(typeof html2canvas==='undefined'){alert('Use your device screenshot to capture the card above.');return;}
+  get169Canvas().then(canvas=>{
+    const link=document.createElement('a');
+    link.download=`facing-it-${safeName()}.png`;
+    link.href=canvas.toDataURL('image/png'); link.click();
+  }).catch(()=>alert('Download failed — try the Screenshot button instead.'));
+}
+
+function openScreenshot(){
+  if(typeof html2canvas==='undefined'){alert('Use your device screenshot to capture the card above.');return;}
+  get169Canvas().then(canvas=>{
+    const link=document.createElement('a');
+    link.download=`facing-it-screenshot-${safeName()}.png`;
+    link.href=canvas.toDataURL('image/png'); link.click();
+  }).catch(()=>alert('Screenshot failed — try the Download Image button instead.'));
+}
 </script>
 </body>
 </html>
